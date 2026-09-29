@@ -1,0 +1,11 @@
+name = "marino-tracker"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+
+[triggers]
+crons = ["*/10 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "marino-tracker"
+database_id = "3795ebe5-4c2a-4b1d-ae38-1178edaa8a16"
