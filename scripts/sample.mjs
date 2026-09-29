@@ -32,6 +32,7 @@ if (!Array.isArray(rooms) || !rooms.length) throw new Error('feed returned no ro
 const history = existsSync(FILE) ? JSON.parse(readFileSync(FILE, 'utf8')) : { rooms: {}, samples: [] };
 const now = Date.now();
 const counts = {};
+const countedAt = {};   // when staff last counted each room (unix seconds)
 for (const r of rooms) {
   const id = String(r.LocationId);
   history.rooms[id] = {
@@ -39,11 +40,16 @@ for (const r of rooms) {
     facility: r.FacilityName,
     capacity: r.TotalCapacity,
   };
-  const ageMin = (now - easternToEpoch(r.LastUpdatedDateAndTime)) / 60000;
+  const counted = easternToEpoch(r.LastUpdatedDateAndTime);
+  const ageMin = (now - counted) / 60000;
   counts[id] = r.IsClosed || !(ageMin < STALE_MINUTES) ? null : r.LastCount;
+  countedAt[id] = Math.round(counted / 1000);
 }
 
-history.samples.push({ t: Math.round(now / 1000), c: counts });
+// The feed repeats a room's last count until staff count it again, so each
+// sample also says when every count was taken (`u`); readers use that to
+// avoid counting one headcount several times.
+history.samples.push({ t: Math.round(now / 1000), c: counts, u: countedAt });
 const cutoff = now / 1000 - KEEP_DAYS * 86400;
 history.samples = history.samples.filter(s => s.t >= cutoff);
 history.updated = new Date(now).toISOString();
