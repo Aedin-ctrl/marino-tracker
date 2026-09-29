@@ -1,0 +1,31 @@
+name: Record gym counts
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # GitHub may run these a few minutes late
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sample
+  cancel-in-progress: false
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/sample.mjs
+      - name: Commit the new sample
+        run: |
+          git config user.name 'marino-tracker'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/history.json
+          git diff --cached --quiet || git commit -m "Sample $(date -u +%Y-%m-%dT%H:%MZ)"
+          git pull --rebase --quiet && git push --quiet
